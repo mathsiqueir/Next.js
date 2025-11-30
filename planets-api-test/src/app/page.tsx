@@ -34,6 +34,8 @@ const createUserFormSchema = z.object({
     })).min(2, 'insira pelo menos duas tecnologias')
 });
 
+type CreateUserFormData = z.infer<typeof createUserFormSchema>
+
 export default function Home() {
   const [output, setOutput] = useState("");
   const {
@@ -41,7 +43,7 @@ export default function Home() {
     handleSubmit,
     formState: { errors },
     control,
-  } = useForm({
+  } = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserFormSchema),
   });
 
@@ -50,7 +52,7 @@ export default function Home() {
     control,
   });
 
-  function createUser(data: any) {
+  function createUser(data: CreateUserFormData) {
     setOutput(JSON.stringify(data, null, 2));
   }
 
@@ -61,7 +63,7 @@ export default function Home() {
     <main className="h-screen bg-zinc-800 flex items-center justify-center flex-col gap-15">
       <form
         onSubmit={handleSubmit(createUser)}
-        className="flex flex-col gap-10 bg-zinc-200 text-black p-10 rounded w-full  max-w-xs"
+        className="flex flex-col gap-10 bg-zinc-200 text-black p-10 rounded w-full  max-w-md"
       >
         <div className="flex flex-col gap-1">
           <label htmlFor="name">Nome Completo</label>
