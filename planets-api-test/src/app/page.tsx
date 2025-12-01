@@ -1,143 +1,101 @@
-"use client";
-import { useForm, useFieldArray } from "react-hook-form";
-import { useState } from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, FormProvider } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useState } from 'react'
+import { Form } from '../components/Form'
 
-const createUserFormSchema = z.object({
-  name: z
-    .string()
-    .nonempty("Nome é obrigatório")
-    .transform((name) => {
-      return name
-        .trim()
-        .split(" ")
-        .map((word) => {
-          return word[0].toLocaleUpperCase().concat(word.substring(1));
-        })
-        .join(" ");
-    }),
-  email: z
-    .string()
-    .nonempty("O e-mail é obrigatório")
-    .toLowerCase()
-    .refine((email) => {
-      return email.endsWith("@gmail.com");
-    }, "O e-mail precisa ser do gmail"),
-  password: z.string().min(6, "A senha precisa no mínimo 6 caracteres"),
-  
-  techs: z.array(z.object({
-      title: z.string()
+const createUserSchema = z.object({
+  name: z.string().nonempty({
+    message: 'O nome é obrigatório',
+  }).transform(name => {
+    return name
       .trim()
-      .nonempty("O título é obrigatório"),
-      knowledge: z.coerce.number().min(1).max(100),
-    })).min(2, 'insira pelo menos duas tecnologias')
-});
+      .split(' ')
+      .map(word => word[0].toLocaleUpperCase().concat(word.substring(1)))
+      .join(' ')
+  }),
+  email: z.string().nonempty({
+    message: 'O e-mail é obrigatório',
+  }).email({
+    message: 'Formato de e-mail inválido',
+  }).toLowerCase(),
+  password: z.string().nonempty({
+    message: 'A senha é obrigatória',
+  }).min(6, {
+    message: 'A senha precisa ter no mínimo 6 caracteres',
+  })
+})
 
-type CreateUserFormData = z.infer<typeof createUserFormSchema>
+type CreateUserData = z.infer<typeof createUserSchema>
 
-export default function Home() {
-  const [output, setOutput] = useState("");
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    control,
-  } = useForm<CreateUserFormData>({
-    resolver: zodResolver(createUserFormSchema),
-  });
+export function App() {
+  const [output, setOutput] = useState('')
 
-  const { fields, append, remove } = useFieldArray({
-    name: "techs",
-    control,
-  });
+  const createUserForm = useForm<CreateUserData>({
+    resolver: zodResolver(createUserSchema),
+  })
 
-  function createUser(data: CreateUserFormData) {
-    setOutput(JSON.stringify(data, null, 2));
+  function createUser(data: CreateUserData) {
+    setOutput(JSON.stringify(data))
   }
 
-  function addNewTech(){
-    append({title: '', knowledge: 0})
-  }
+  const { 
+    handleSubmit, 
+    formState: { isSubmitting }, 
+    watch 
+  } = createUserForm;
+
+  const userPassword = watch('password')
+  const isPasswordStrong = new RegExp('(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9])(?=.{8,})').test(userPassword)
+
   return (
-    <main className="h-screen bg-zinc-800 flex items-center justify-center flex-col gap-15">
-      <form
-        onSubmit={handleSubmit(createUser)}
-        className="flex flex-col gap-10 bg-zinc-200 text-black p-10 rounded w-full  max-w-md"
-      >
-        <div className="flex flex-col gap-1">
-          <label htmlFor="name">Nome Completo</label>
-          <input
-            type="name"
-            id="name"
-            className="border border-zinc-100 shadow-md rounded h-10 px-3"
-            {...register("name")}
-          />
-          {errors?.name && <span className="text-red-500 text-sm">{errors.name?.message}</span>}
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email">E-mail</label>
-          <input
-            type="email"
-            id="email"
-            className="border border-zinc-100 shadow-md rounded h-10 px-3"
-            {...register("email")}
-          />
-          {errors?.email && <span className="text-red-500 text-sm">{errors.email?.message}</span>}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password">senha</label>
-          <input
-            type="password"
-            id="password"
-            className="border border-zinc-100 shadow-md rounded h-10 px-3"
-            {...register("password")}
-          />
-          {errors?.password && <span className="text-red-500 text-sm">{errors.password?.message}</span>}
-        </div>
-        <div className="flex flex-col gap-1">
-          <div className="flex justify-between items-center gap-20">
-            <label htmlFor="Tech">Tecnologias</label>
-            <button onClick={addNewTech} className="shadow-md px-2 rounded text-white bg-emerald-500 hover:scale-105 hover:bg-emerald-700 hover:transition-all">Add</button>
-          </div>
-
-          {fields.map((field, index) => {
-            return (
-              <div key={field.id} className="flex gap-2 ">
-                
-                <div className="flex flex-1 flex-col gap-1">
-                  <input
-                    type="text"
-                    className="border border-zinc-300 shadow-md rounded h-10 px-3"
-                    {...register(`techs.${index}.title`)}
-                  />
-                    {errors?.techs?.[index]?.title && <span className="text-red-500 text-sm">{errors.techs?.[index]?.title?.message}</span>}
-                </div>
-
-                <div className="flex flex-col flex-1">
-                  <input
-                    type="number"
-                    className="w-12 border border-zinc-300 shadow-md rounded h-10 px-3"
-                    {...register(`techs.${index}.knowledge`)}
-                  />
-                  {errors?.techs?.[index]?.knowledge && <span className="text-red-500 text-sm">{errors.techs?.[index]?.knowledge?.message}</span>}
-                </div>
-              </div>
-            );
-          })}
-          {errors.techs && <span className="text-red-500 text-sm" >{errors.techs.message}</span>}
-        </div>
-
-        <button
-          type="submit"
-          className="bg-emerald-500 rounded font-semibold text-white h-10 hover:bg-emerald-700 hover:transition hover:scale-105"
+    <main className="h-screen flex flex-col gap-6 items-center justify-center">
+      <FormProvider {...createUserForm}>
+        <form 
+          onSubmit={handleSubmit(createUser)}
+          className="flex flex-col gap-4 w-full max-w-xs"
         >
-          Salvar
-        </button>
-      </form>
+          <Form.Field>
+            <Form.Label htmlFor="name">
+              Nome
+            </Form.Label>
+            <Form.Input type="name" name="name" />
+            <Form.ErrorMessage field="name" />
+          </Form.Field>
 
-      <pre>{output}</pre>
+          <Form.Field>
+            <Form.Label htmlFor="email">
+              E-mail
+            </Form.Label>
+            <Form.Input type="email" name="email" />
+            <Form.ErrorMessage field="email" />
+          </Form.Field>
+
+          <Form.Field>
+            <Form.Label htmlFor="password">
+              Senha
+
+              {isPasswordStrong 
+                ? <span className="text-xs text-emerald-600">Senha forte</span>
+                : <span className="text-xs text-red-500">Senha fraca</span>}
+            </Form.Label>
+            <Form.Input type="password" name="password" />
+            <Form.ErrorMessage field="password" />
+          </Form.Field>
+
+          <button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="bg-violet-500 text-white rounded px-3 py-2 font-semibold text-sm hover:bg-violet-600"
+          >
+            Salvar
+          </button>
+        </form>
+      </FormProvider>
+
+      <pre className="text-sm">
+        {output}
+      </pre>
     </main>
-  );
+  )
 }
