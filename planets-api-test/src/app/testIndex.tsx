@@ -41,8 +41,8 @@ const createUserFormSchema = z.object({
     ),
 });
 
-type CreateUserFormInputs = z.input<typeof createUserFormSchema>;
-type CreateUserFormOutputs = z.output<typeof createUserFormSchema>;
+type createUserData = z.input<typeof createUserFormSchema>;
+
 
 export default function Home() {
   const [output, setOutput] = useState("");
@@ -51,7 +51,7 @@ export default function Home() {
     handleSubmit,
     formState: { errors },
     control,
-  } = useForm<CreateUserFormInputs>({
+  } = useForm<createUserData>({
     resolver: zodResolver(createUserFormSchema),
   });
 
@@ -60,7 +60,7 @@ export default function Home() {
     control,
   });
 
-  function createUser(data: CreateUserFormOutputs) {
+  function createUser(data: createUserData) {
     console.log(data.avatar);
     setOutput(JSON.stringify(data, null, 2));
   }
@@ -73,7 +73,7 @@ export default function Home() {
     <main className="h-screen bg-zinc-800 flex items-center justify-center flex-col gap-15">
       <form
         onSubmit={handleSubmit(createUser)}
-        className="flex flex-col gap-10 bg-zinc-200 text-black p-10 rounded w-full  max-w-md"
+        className="flex flex-col gap-10 bg-gr text-black p-10 rounded w-full  max-w-md"
       >
         <div className="flex flex-col gap-1">
           <label htmlFor="avatar">avatar</label>
